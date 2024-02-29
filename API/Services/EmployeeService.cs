@@ -2,6 +2,7 @@ using API.DTOs.Employees;
 using API.Models;
 using API.Repositories.Interfaces;
 using API.Services.Interfaces;
+using API.Utilities.Handlers;
 using AutoMapper;
 
 namespace API.Services;
@@ -19,103 +20,56 @@ public class EmployeeService : IEmployeeService
 
     public async Task<IEnumerable<EmployeeResponseDto>?> GetAllAsync()
     {
-        try
-        {
-            var data = await _employeeRepository.GetAllAsync();
+        var data = await _employeeRepository.GetAllAsync();
 
-            var dataMap = _mapper.Map<IEnumerable<EmployeeResponseDto>>(data);
+        var dataMap = _mapper.Map<IEnumerable<EmployeeResponseDto>>(data);
 
-            return dataMap; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return dataMap; // success
     }
 
     public async Task<EmployeeResponseDto?> GetByIdAsync(Guid id)
     {
-        try
-        {
-            var data = await _employeeRepository.GetByIdAsync(id);
+        var data = await _employeeRepository.GetByIdAsync(id);
 
-            var dataMap = _mapper.Map<EmployeeResponseDto>(data);
+        var dataMap = _mapper.Map<EmployeeResponseDto>(data);
 
-            return dataMap; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return dataMap; // success
     }
 
     public async Task<int> CreateAsync(EmployeeRequestDto employeeRequestDto)
     {
-        try
-        {
-            var employee = _mapper.Map<Employee>(employeeRequestDto);
+        var getLastNik = await _employeeRepository.GetLastNikAsync();
+        var employee = _mapper.Map<Employee>(employeeRequestDto);
+        employee.Nik = GenerateHandler.Nik(getLastNik);
+        await _employeeRepository.CreateAsync(employee);
 
-            await _employeeRepository.CreateAsync(employee);
-
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 
     public async Task<int> UpdateAsync(Guid id, EmployeeRequestDto employeeRequestDto)
     {
-        try
-        {
-            var data = await _employeeRepository.GetByIdAsync(id);
+        var data = await _employeeRepository.GetByIdAsync(id);
+        await _employeeRepository.ChangeTrackingAsync();
+        if (data == null) return 0; // not found
 
-            if (data == null) return 0; // not found
+        var employee = _mapper.Map<Employee>(employeeRequestDto);
 
-            var employee = _mapper.Map<Employee>(employeeRequestDto);
+        employee.Id = id;
+        employee.Nik = data.Nik;
+        employee.JoinedDate = data.JoinedDate;
+        await _employeeRepository.UpdateAsync(employee);
 
-            employee.Id = id;
-            await _employeeRepository.UpdateAsync(employee);
-
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 
     public async Task<int> DeleteAsync(Guid id)
     {
-        try
-        {
-            var data = await _employeeRepository.GetByIdAsync(id);
+        var data = await _employeeRepository.GetByIdAsync(id);
 
-            if (data == null) return 0; // not found
+        if (data == null) return 0; // not found
 
-            await _employeeRepository.DeleteAsync(data);
+        await _employeeRepository.DeleteAsync(data);
 
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 }

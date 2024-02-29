@@ -23,40 +23,30 @@ public class OvertimeService : IOvertimeService
 
     public async Task<OvertimeDownloadResponseDto> DownloadDocumentAsync(Guid overtimeId)
     {
+        var overtime = await _overtimeRepository.GetByIdAsync(overtimeId);
+
+        if (overtime is null)
+            return new OvertimeDownloadResponseDto(BitConverter.GetBytes(0),
+                                                   "0",
+                                                   "0"); // id not found
+
+        if (string.IsNullOrEmpty(overtime.Document))
+            return new OvertimeDownloadResponseDto(BitConverter.GetBytes(-1),
+                                                   "-1",
+                                                   "-1"); // document not found
+
+        byte[] document;
         try
         {
-            var overtime = await _overtimeRepository.GetByIdAsync(overtimeId);
-
-            if (overtime is null)
-                return new OvertimeDownloadResponseDto(BitConverter.GetBytes(0),
-                                                       "0",
-                                                       "0"); // id not found
-
-            if (string.IsNullOrEmpty(overtime.Document))
-                return new OvertimeDownloadResponseDto(BitConverter.GetBytes(-1),
-                                                       "-1",
-                                                       "-1"); // document not found
-
-            byte[] document;
-            try
-            {
-                document = await DocumentHandler.Download(overtime.Document);
-            }
-            catch
-            {
-                throw new Exception("File not exist in server");
-            }
-
-            return new OvertimeDownloadResponseDto(document, "application/octet-stream",
-                                                   Path.GetFileName(overtime.Document)); // success
+            document = await DocumentHandler.Download(overtime.Document);
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
+            throw new Exception("File not exist in server");
         }
+
+        return new OvertimeDownloadResponseDto(document, "application/octet-stream",
+                                               Path.GetFileName(overtime.Document)); // success
     }
 
     public Task<int> ChangeRequestStatusAsync(OvertimeChangeRequestDto overtimeChangeRequestDto)
@@ -77,50 +67,33 @@ public class OvertimeService : IOvertimeService
 
     public async Task<OvertimeDetailResponseDto> GetDetailByOvertimeIdAsync(Guid overtimeId)
     {
-        try
-        {
-            var data = await _overtimeRepository.GetByIdAsync(overtimeId);
+        var data = await _overtimeRepository.GetByIdAsync(overtimeId);
 
-            var dataMap = _mapper.Map<OvertimeDetailResponseDto>(data);
+        var dataMap = _mapper.Map<OvertimeDetailResponseDto>(data);
 
-            return dataMap; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return dataMap; // success
     }
 
     public async Task<IEnumerable<OvertimeDetailResponseDto>?> GetDetailsAsync(Guid accountId)
     {
-        try
-        {
-            var data = await _overtimeRepository.GetAllAsync();
+        var data = await _overtimeRepository.GetAllAsync();
 
-            data = data.Where(x => x.OvertimeRequests.Any(or => or.AccountId == accountId));
+        data = data.Where(x => x.OvertimeRequests.Any(or => or.AccountId == accountId));
 
-            var dataMap = _mapper.Map<IEnumerable<OvertimeDetailResponseDto>>(data);
+        var dataMap = _mapper.Map<IEnumerable<OvertimeDetailResponseDto>>(data);
 
-            return dataMap; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return dataMap; // success
     }
 
-    public async Task<int> RequestOvertimeAsync(IFormFile document, OvertimeRequestDto overtimeRequestDto)
+    public async Task<int> RequestOvertimeAsync(IFormFile? document, OvertimeRequestDto overtimeRequestDto)
     {
+        if (document is null) return -1; // file not found
+        if (document.Length == 0) return -1; // file not found
+        
+        await using var transaction = await _overtimeRepository.BeginTransactionAsync();
+
         try
         {
-            if (document is null && document.Length == 0) return -1; // file not found
-
             var overtime = _mapper.Map<Overtime>(overtimeRequestDto);
             var upload = await DocumentHandler.Upload(document, overtime.Id);
             overtime.Document = upload;
@@ -130,110 +103,59 @@ public class OvertimeService : IOvertimeService
             overtimeRequset.AccountId = overtimeRequestDto.AccountId;
             await _overtimeRequestRepository.CreateAsync(overtimeRequset);
 
+            await transaction.CommitAsync();
             return 1; // success
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 
-    public async Task<IEnumerable<OvertimeResponseDto>?> GetAllAsync()
+    public async Task<IEnumerable<OvertimeDetailResponseDto>?> GetAllAsync()
     {
-        try
-        {
-            var data = await _overtimeRepository.GetAllAsync();
+        var data = await _overtimeRepository.GetAllAsync();
 
-            var dataMap = _mapper.Map<IEnumerable<OvertimeResponseDto>>(data);
+        var dataMap = _mapper.Map<IEnumerable<OvertimeDetailResponseDto>>(data);
 
-            return dataMap; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return dataMap; // success
     }
 
     public async Task<Overtime?> GetByIdAsync(Guid id)
     {
-        try
-        {
-            var data = await _overtimeRepository.GetByIdAsync(id);
+        var data = await _overtimeRepository.GetByIdAsync(id);
 
-            return data; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return data; // success
     }
 
     public async Task<int> CreateAsync(Overtime overtime)
     {
-        try
-        {
-            await _overtimeRepository.CreateAsync(overtime);
+        await _overtimeRepository.CreateAsync(overtime);
 
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 
     public async Task<int> UpdateAsync(Guid id, Overtime overtime)
     {
-        try
-        {
-            var data = await _overtimeRepository.GetByIdAsync(id);
+        var data = await _overtimeRepository.GetByIdAsync(id);
+        await _overtimeRepository.ChangeTrackingAsync();
+        if (data == null) return 0; // not found
 
-            if (data == null) return 0; // not found
+        overtime.Id = id;
+        await _overtimeRepository.UpdateAsync(overtime);
 
-            overtime.Id = id;
-            await _overtimeRepository.UpdateAsync(overtime);
-
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 
     public async Task<int> DeleteAsync(Guid id)
     {
-        try
-        {
-            var data = await _overtimeRepository.GetByIdAsync(id);
+        var data = await _overtimeRepository.GetByIdAsync(id);
 
-            if (data == null) return 0; // not found
+        if (data == null) return 0; // not found
 
-            await _overtimeRepository.DeleteAsync(data);
+        await _overtimeRepository.DeleteAsync(data);
 
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 }

@@ -4,6 +4,7 @@ using API.DTOs.Employees;
 using API.DTOs.Overtimes;
 using API.DTOs.Roles;
 using API.Models;
+using API.Utilities.Handlers;
 using AutoMapper;
 
 namespace API.DTOs;
@@ -15,20 +16,39 @@ public class MapperProfile : Profile
         // For Employees
         CreateMap<EmployeeRequestDto, Employee>()
            .ForMember(dest => dest.JoinedDate,
-                      opt => opt.MapFrom(src => new DateTime()));
+                      opt => opt.MapFrom(src => DateTime.Now));
+        
+        CreateMap<RegisterDto, Employee>()
+           .ForMember(dest => dest.JoinedDate,
+                      opt => opt.MapFrom(src => DateTime.Now));
 
         CreateMap<Employee, EmployeeResponseDto>();
 
         // For Accounts
-        CreateMap<AccountRequestDto, Account>()
+        CreateMap<RegisterDto, Account>()
+           .ForMember(dest => dest.Password,
+                      opt => opt.MapFrom(src => BCryptHandler.HashPassword(src.Password)))
            .ForMember(dest => dest.Otp,
                       opt => opt.MapFrom(src => 0))
            .ForMember(dest => dest.Expired,
-                      opt => opt.MapFrom(src => new DateTime()))
+                      opt => opt.MapFrom(src => DateTime.Now))
            .ForMember(dest => dest.IsUsed,
                       opt => opt.MapFrom(src => true))
            .ForMember(dest => dest.IsActive,
                       opt => opt.MapFrom(src => true));
+        
+        CreateMap<AccountRequestDto, Account>()
+           .ForMember(dest => dest.Password,
+                      opt => opt.MapFrom(src => BCryptHandler.HashPassword(src.Password)))
+           .ForMember(dest => dest.Otp,
+                      opt => opt.MapFrom(src => 0))
+           .ForMember(dest => dest.Expired,
+                      opt => opt.MapFrom(src => DateTime.Now))
+           .ForMember(dest => dest.IsUsed,
+                      opt => opt.MapFrom(src => true))
+           .ForMember(dest => dest.IsActive,
+                      opt => opt.MapFrom(src => true));
+        
         CreateMap<Account, AccountResponseDto>()
            .ForMember(dest => dest.Roles,
                       opt => opt.MapFrom(src => src.AccountRoles.Select(ar => ar.Role.Name)));
@@ -51,7 +71,7 @@ public class MapperProfile : Profile
         CreateMap<Overtime, OvertimeRequest>()
            .ForMember(dest => dest.Comment, opt => opt.MapFrom(src => src.Reason))
            .ForMember(dest => dest.OvertimeId, opt => opt.MapFrom(src => src.Id))
-           .ForMember(dest => dest.Timestamp, opt => opt.MapFrom(src => new DateTime()));
+           .ForMember(dest => dest.Timestamp, opt => opt.MapFrom(src => DateTime.Now));
         CreateMap<Overtime, OvertimeResponseDto>();
         CreateMap<Overtime, OvertimeDetailResponseDto>()
            .ForMember(dest => dest.Requests,

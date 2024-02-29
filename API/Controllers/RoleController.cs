@@ -23,9 +23,11 @@ public class RoleController : ControllerBase
         var results = await _roleService.GetAllAsync();
 
         if (!results.Any())
+        {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
                                                   "Data Employee Not Found")); // Data Not Found
+        }
 
         return Ok(new ListResponseVM<RoleResponseDto>(StatusCodes.Status200OK,
                                                       HttpStatusCode.OK.ToString(),
@@ -39,9 +41,11 @@ public class RoleController : ControllerBase
         var result = await _roleService.GetByIdAsync(id);
 
         if (result is null)
+        {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
                                                   "Id Employee Not Found")); // Data Not Found
+        }
 
         return Ok(new SingleResponseVM<RoleResponseDto>(StatusCodes.Status200OK,
                                                         HttpStatusCode.OK.ToString(),
@@ -52,7 +56,7 @@ public class RoleController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateAsync(RoleRequestDto roleRequestDto)
     {
-        var result = await _roleService.CreateAsync(roleRequestDto);
+        await _roleService.CreateAsync(roleRequestDto);
 
         return Ok(new MessageResponseVM(StatusCodes.Status200OK,
                                         HttpStatusCode.OK.ToString(),
@@ -65,10 +69,12 @@ public class RoleController : ControllerBase
         var result = await _roleService.UpdateAsync(id, roleRequestDto);
 
         if (result == 0)
+        {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
                                                   "Id Employee Not Found"
                                                  )); // Data Not Found
+        }
 
         return Ok(new MessageResponseVM(StatusCodes.Status200OK,
                                         HttpStatusCode.OK.ToString(),
@@ -81,10 +87,12 @@ public class RoleController : ControllerBase
         var result = await _roleService.DeleteAsync(id);
 
         if (result == 0)
+        {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
                                                   "Id Employee Not Found"
                                                  )); // Data Not Found
+        }
 
         return Ok(new MessageResponseVM(StatusCodes.Status200OK,
                                         HttpStatusCode.OK.ToString(),

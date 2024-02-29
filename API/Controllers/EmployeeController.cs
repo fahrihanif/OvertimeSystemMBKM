@@ -23,9 +23,11 @@ public class EmployeeController : ControllerBase
         var results = await _employeeService.GetAllAsync();
 
         if (!results.Any())
+        {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
                                                   "Data Employee Not Found")); // Data Not Found
+        }
 
         return Ok(new ListResponseVM<EmployeeResponseDto>(StatusCodes.Status200OK,
                                                           HttpStatusCode.OK.ToString(),
@@ -39,9 +41,11 @@ public class EmployeeController : ControllerBase
         var result = await _employeeService.GetByIdAsync(id);
 
         if (result is null)
+        {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
                                                   "Id Employee Not Found")); // Data Not Found
+        }
 
         return Ok(new SingleResponseVM<EmployeeResponseDto>(StatusCodes.Status200OK,
                                                             HttpStatusCode.OK.ToString(),
@@ -52,7 +56,7 @@ public class EmployeeController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateAsync(EmployeeRequestDto employeeRequestDto)
     {
-        var result = await _employeeService.CreateAsync(employeeRequestDto);
+        await _employeeService.CreateAsync(employeeRequestDto);
 
         return Ok(new MessageResponseVM(StatusCodes.Status200OK,
                                         HttpStatusCode.OK.ToString(),
@@ -65,10 +69,12 @@ public class EmployeeController : ControllerBase
         var result = await _employeeService.UpdateAsync(id, employeeRequestDto);
 
         if (result == 0)
+        {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
                                                   "Id Employee Not Found"
                                                  )); // Data Not Found
+        }
 
         return Ok(new MessageResponseVM(StatusCodes.Status200OK,
                                         HttpStatusCode.OK.ToString(),
@@ -81,10 +87,13 @@ public class EmployeeController : ControllerBase
         var result = await _employeeService.DeleteAsync(id);
 
         if (result == 0)
+        {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
                                                   "Id Employee Not Found"
                                                  )); // Data Not Found
+            
+        }
 
         return Ok(new MessageResponseVM(StatusCodes.Status200OK,
                                         HttpStatusCode.OK.ToString(),

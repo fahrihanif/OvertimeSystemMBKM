@@ -9,8 +9,13 @@ public class EmployeeRepository : GeneralRepository<Employee>, IEmployeeReposito
 {
     public EmployeeRepository(OvertimeSystemDbContext context) : base(context) { }
 
-    public async Task<Employee?> GetByNikAsync(string nik)
+    public async Task<string?> GetLastNikAsync()
     {
-        return await _context.Set<Employee>().Where(e => e.Nik == nik).FirstOrDefaultAsync();
+        return _context.Set<Employee>().ToList().Select(e => e.Nik).LastOrDefault();
+    }
+
+    public async Task<Employee?> GetByEmailAsync(string email)
+    {
+        return await _context.Set<Employee>().FirstOrDefaultAsync(e => e.Email == email);
     }
 }

@@ -19,103 +19,53 @@ public class RoleService : IRoleService
 
     public async Task<IEnumerable<RoleResponseDto>?> GetAllAsync()
     {
-        try
-        {
-            var data = await _roleRepository.GetAllAsync();
+        var data = await _roleRepository.GetAllAsync();
 
-            var dataMap = _mapper.Map<IEnumerable<RoleResponseDto>>(data);
+        var dataMap = _mapper.Map<IEnumerable<RoleResponseDto>>(data);
 
-            return dataMap; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return dataMap; // success
     }
 
     public async Task<RoleResponseDto?> GetByIdAsync(Guid id)
     {
-        try
-        {
-            var data = await _roleRepository.GetByIdAsync(id);
+        var data = await _roleRepository.GetByIdAsync(id);
 
-            var dataMap = _mapper.Map<RoleResponseDto>(data);
+        var dataMap = _mapper.Map<RoleResponseDto>(data);
 
-            return dataMap; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return dataMap; // success
     }
 
     public async Task<int> CreateAsync(RoleRequestDto roleRequestDto)
     {
-        try
-        {
-            var role = _mapper.Map<Role>(roleRequestDto);
+        var role = _mapper.Map<Role>(roleRequestDto);
 
-            await _roleRepository.CreateAsync(role);
+        await _roleRepository.CreateAsync(role);
 
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 
     public async Task<int> UpdateAsync(Guid id, RoleRequestDto roleRequestDto)
     {
-        try
-        {
-            var data = await _roleRepository.GetByIdAsync(id);
+        var data = await _roleRepository.GetByIdAsync(id);
+        await _roleRepository.ChangeTrackingAsync();
+        if (data == null) return 0; // not found
 
-            if (data == null) return 0; // not found
+        var role = _mapper.Map(roleRequestDto, data);
 
-            var role = _mapper.Map(roleRequestDto, data);
+        role.Id = id;
+        await _roleRepository.UpdateAsync(role);
 
-            role.Id = id;
-            await _roleRepository.UpdateAsync(role);
-
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 
     public async Task<int> DeleteAsync(Guid id)
     {
-        try
-        {
-            var data = await _roleRepository.GetByIdAsync(id);
+        var data = await _roleRepository.GetByIdAsync(id);
 
-            if (data == null) return 0; // not found
+        if (data == null) return 0; // not found
 
-            await _roleRepository.DeleteAsync(data);
+        await _roleRepository.DeleteAsync(data);
 
-            return 1; // success
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.InnerException?.Message ?? ex.Message,
-                              Console.ForegroundColor = ConsoleColor.Red);
-
-            throw; // error
-        }
+        return 1; // success
     }
 }

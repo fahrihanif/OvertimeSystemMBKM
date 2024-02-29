@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace API.Repositories.Interfaces;
 
 public interface IRepository<TEntity>
@@ -7,4 +9,6 @@ public interface IRepository<TEntity>
     Task<TEntity> CreateAsync(TEntity entity);
     Task UpdateAsync(TEntity entity);
     Task DeleteAsync(TEntity entity);
+    Task ChangeTrackingAsync();
+    Task<IDbContextTransaction> BeginTransactionAsync();
 }

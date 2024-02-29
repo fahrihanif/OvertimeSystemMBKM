@@ -4,5 +4,6 @@ namespace API.Repositories.Interfaces;
 
 public interface IEmployeeRepository : IRepository<Employee>
 {
-    Task<Employee?> GetByNikAsync(string nik);
+    Task<string?> GetLastNikAsync();
+    Task<Employee?> GetByEmailAsync(string email);
 }

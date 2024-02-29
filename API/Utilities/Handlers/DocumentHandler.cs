@@ -2,7 +2,7 @@ namespace API.Utilities.Handlers;
 
 public class DocumentHandler
 {
-    public static async Task<string> Upload(IFormFile document, Guid overtimeId)
+    public static async Task<string> Upload(IFormFile? document, Guid overtimeId)
     {
         var fileExtension = Path.GetExtension(document.FileName);
         var fileName = $"{overtimeId}{fileExtension}";
