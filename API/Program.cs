@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Serialization;
 using API.Data;
 using API.Repositories.Data;
@@ -6,7 +7,9 @@ using API.Services;
 using API.Services.Interfaces;
 using API.Utilities.Handlers;
 using API.Utilities.Middlewares;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +57,34 @@ builder.Services.AddDbContext<OvertimeSystemDbContext>(options =>
     
 });
 
+// Add authentication schema using JWT
+builder.Services.AddAuthentication(x =>
+{
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(x =>
+{
+    x.TokenValidationParameters = new TokenValidationParameters() {
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+// Add token handler to the container
+builder.Services.AddScoped<IJwtHandler, JwtHandler>(_ =>
+    new JwtHandler(builder.Configuration["Jwt:Key"],
+                     builder.Configuration["Jwt:Issuer"],
+                     builder.Configuration["Jwt:Audience"],
+                     int.Parse(builder.Configuration["Jwt:DurationInMinutes"])
+));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -66,6 +97,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

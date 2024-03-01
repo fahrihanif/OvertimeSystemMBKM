@@ -6,7 +6,7 @@ namespace API.Services.Interfaces;
 public interface IAccountService
 {
     Task<int> ResetPasswordAsync(ResetPasswordRequestDto resetPasswordRequestDto);
-    Task<OtpResponseDto?> SendOtpAsync(string email);
+    Task<int> SendOtpAsync(string email);
     Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginRequestDto);
     Task<int> RegisterAsync(RegisterDto registerDto);
     Task<int> AddAccountRoleAsync(AddAccountRoleRequestDto addAccountRoleRequestDto);

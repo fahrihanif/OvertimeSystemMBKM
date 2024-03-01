@@ -1,4 +1,4 @@
-using API.Data;
+using System.Security.Claims;
 using API.DTOs.AccountRoles;
 using API.DTOs.Accounts;
 using API.Models;
@@ -17,10 +17,11 @@ public class AccountService : IAccountService
     private readonly IRoleRepository _roleRepository;
     private readonly IMapper _mapper;
     private readonly IEmailHandler _emailHandler;
+    private readonly IJwtHandler _jwtHandler;
 
     public AccountService(IAccountRepository accountRepository, IMapper mapper,
                           IAccountRoleRepository accountRoleRepository, IRoleRepository roleRepository,
-                          IEmployeeRepository employeeRepository, IEmailHandler emailHandler)
+                          IEmployeeRepository employeeRepository, IEmailHandler emailHandler, IJwtHandler jwtHandler)
     {
         _accountRepository = accountRepository;
         _mapper = mapper;
@@ -28,6 +29,7 @@ public class AccountService : IAccountService
         _roleRepository = roleRepository;
         _employeeRepository = employeeRepository;
         _emailHandler = emailHandler;
+        _jwtHandler = jwtHandler;
     }
 
     public async Task<int> ResetPasswordAsync(ResetPasswordRequestDto resetPasswordRequestDto)
@@ -52,13 +54,13 @@ public class AccountService : IAccountService
         return 1; // success
     }
 
-    public async Task<OtpResponseDto?> SendOtpAsync(string email)
+    public async Task<int> SendOtpAsync(string email)
     {
         var employee = await _employeeRepository.GetByEmailAsync(email);
-        if (employee == null) return null; // not found
+        if (employee == null) return 0; // not found
         
         var account = await _accountRepository.GetByIdAsync(employee.Id);
-        if (account == null) return null; // not found
+        if (account == null) return 0; // not found
         
         var otp = new Random().Next(00000, 99999);
         account.Otp = otp;
@@ -76,7 +78,7 @@ public class AccountService : IAccountService
         var emailMap = new EmailDto(email, "[Reset Password] - MBKM 6", message);
         await _emailHandler.SendEmailAsync(emailMap);
 
-        return new OtpResponseDto(otp);
+        return 1; // success
     }
 
     public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginRequestDto)
@@ -92,7 +94,20 @@ public class AccountService : IAccountService
         var isPasswordValid = BCryptHandler.VerifyPassword(loginRequestDto.Password, account.Password);
         if (!isPasswordValid) return null; // not found
 
-        return new LoginResponseDto("isinya nanti token jwt");
+        var claims = new List<Claim>();
+        claims.Add(new Claim("Nik", employee.Nik));
+        claims.Add(new Claim("FullName", string.Concat(employee.FirstName + " " + employee.LastName)));
+        claims.Add(new Claim("Email", employee.Email));
+
+        var getAccountRole = account.AccountRoles.Select(ar => ar.Role.Name);
+        foreach (var item in getAccountRole)
+        {
+            claims.Add(new Claim(ClaimTypes.Role,item));
+        }
+        
+        var token = _jwtHandler.Generate(claims);
+        
+        return new LoginResponseDto(token);
     }
 
     public async Task<int> RegisterAsync(RegisterDto registerDto)

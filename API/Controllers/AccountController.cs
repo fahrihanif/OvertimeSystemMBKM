@@ -3,10 +3,12 @@ using API.DTOs.AccountRoles;
 using API.DTOs.Accounts;
 using API.Services.Interfaces;
 using API.Utilities.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+[Authorize(Roles = "employee")]
 [ApiController]
 [Route("account")]
 public class AccountController : ControllerBase
@@ -18,6 +20,7 @@ public class AccountController : ControllerBase
         _accountService = accountService;
     }
     
+    [AllowAnonymous]
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPasswordAsync(ResetPasswordRequestDto resetPasswordRequestDto)
     {
@@ -70,12 +73,13 @@ public class AccountController : ControllerBase
                                         "Password Reset"));
     }
     
+    [AllowAnonymous]
     [HttpPost("send-otp")]
     public async Task<IActionResult> SendOtpAsync(string email)
     {
         var result = await _accountService.SendOtpAsync(email);
 
-        if (result == null)
+        if (result == 0)
         {
             return NotFound(new MessageResponseVM(StatusCodes.Status404NotFound,
                                                   HttpStatusCode.NotFound.ToString(),
@@ -83,12 +87,12 @@ public class AccountController : ControllerBase
                                                  )); // Data Not Found
         }
 
-        return Ok(new SingleResponseVM<OtpResponseDto>(StatusCodes.Status200OK,
-                                                       HttpStatusCode.OK.ToString(),
-                                                       "Otp Sent",
-                                                       result));
+        return Ok(new MessageResponseVM(StatusCodes.Status200OK,
+                                        HttpStatusCode.OK.ToString(),
+                                        "Otp Sent to Email"));
     }
     
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> LoginAsync(LoginRequestDto loginRequestDto)
     {
@@ -108,6 +112,7 @@ public class AccountController : ControllerBase
                                                            result));
     }
     
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> RegisterAsync(RegisterDto registerDto)
     {
@@ -126,6 +131,7 @@ public class AccountController : ControllerBase
                                         "Account Created"));
     }
 
+    [Authorize(Roles = "admin")]
     [HttpDelete("remove-role")]
     public async Task<IActionResult> RemoveRoleAsync(RemoveAccountRoleRequestDto removeAccountRoleRequestDto)
     {
@@ -142,6 +148,7 @@ public class AccountController : ControllerBase
                                         "Employee Deleted"));
     }
 
+    [Authorize(Roles = "admin")]
     [HttpPost("add-role")]
     public async Task<IActionResult> AddRoleAsync(AddAccountRoleRequestDto addAccountRoleRequestDto)
     {

@@ -2,10 +2,12 @@ using System.Net;
 using API.DTOs.Employees;
 using API.Services.Interfaces;
 using API.Utilities.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+[Authorize(Roles = "employee")]
 [ApiController]
 [Route("employee")]
 public class EmployeeController : ControllerBase
