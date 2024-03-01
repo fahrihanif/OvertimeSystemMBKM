@@ -85,6 +85,19 @@ builder.Services.AddScoped<IJwtHandler, JwtHandler>(_ =>
                      int.Parse(builder.Configuration["Jwt:DurationInMinutes"])
 ));
 
+builder.Services.AddCors(x =>
+{
+    x.AddDefaultPolicy(option =>
+    {
+        //option.WithOrigins("https://brm.metrodataacademy.id", "https://portal.metrodataacademy.id");
+        //option.WithHeaders("Content-Type", "Authorization", "Accept");
+        //option.WithMethods("GET", "POST", "PUT", "DELETE");
+        option.AllowAnyOrigin();
+        option.AllowAnyHeader();
+        option.AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -97,6 +110,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+app.UseCors();
 
 app.UseAuthentication();
 
